@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue Todo-list</title>
+</head>
+<body>
+    <h1>Todo-list</h1>
+    <p>Using Vue and local storage or database</p>
+    <div class="todo-list">
+
+        <p v-if="!items.length">No items</p>
+
+        <ul v-if="items.length">
+            <li v-for="item in items">{{ item.title }} - <a href="#" v-on:click="removeItem(item)">Remove</a></li>
+        </ul>
+
+        <input type="text" v-model="item">
+        <input type="submit" value="Add item" v-on:click="addItem">
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.15/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script>
+        new Vue({
+            el: '.todo-list',
+            data: {
+                item: '',
+                items: [],
+            },
+            methods: {
+                addItem: function() {
+                    var item = {
+                        id: Date.now(),
+                        title: this.item,
+                        temporary: true
+                    };
+
+                    this.items.push(item);
+
+                    //localStorage.setItem('items', JSON.stringify(this.items));
+
+                    $.ajax({
+                        url: 'todo.php',
+                        type: 'post',
+                        cache: false,
+                        data: {
+                            title: this.item
+                        }
+                    });
+
+
+
+                    this.item = '';
+                },
+                removeItem: function(item) {
+                    var newItems = this.items.filter(function (i) {
+                        return item.id !== i.id;
+                    });
+                    //console.log(newItems);
+                    this.items = newItems;
+
+                    //localStorage.setItem('items', JSON.stringify(this.items)); // local storage
+                    if (!item.temporary) {
+                        $.ajax({
+                            url: 'todo.php',
+                            type: 'delete',
+                            cache: false,
+                            data: {
+                                id: item.id
+                            }
+                        });
+                    }
+                }
+            },
+            // On load
+            ready: function () {
+
+                //this.items = JSON.parse(localStorage.getItem('items')) || []; // local storage
+
+                $.ajax({
+                    url: 'todo.php',
+                    type: 'get',
+                    cache: false
+                }).success( function (data) {
+                    console.log(data);
+                    this.items = data;
+                }.bind(this));
+            }
+        });
+    </script>
+</body>
+</html>
